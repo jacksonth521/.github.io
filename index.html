@@ -1,0 +1,716 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流亡黯道 1 & 2｜自動刷寶 RPG</title>
+<style>
+:root {
+  --bg:#050b14; --panel:#091523; --line:#183753;
+  --blue:#1688ef; --gold:#d9a85b; --text:#dce9fa;
+  --muted:#8da6c2; --red:#ed394a; --green:#54d79a;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font:14px/1.6 "Microsoft JhengHei",Arial,sans-serif;
+}
+button,select,input { font:inherit; }
+button,select {
+  color:var(--text); background:#10243a;
+  border:1px solid #285071; border-radius:6px;
+  padding:9px; cursor:pointer;
+}
+button:hover { border-color:#50aaff; background:#153552; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+header {
+  padding:16px 22px; border-bottom:1px solid var(--line);
+  background:linear-gradient(110deg,#091728,#10243a,#210e15);
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap;
+}
+h1 { margin:0; font-size:clamp(18px,2.5vw,28px); }
+h2 { font-size:15px; margin:0 0 12px; }
+h3 { font-size:13px; margin:12px 0 6px; }
+.subtitle { color:var(--muted); font-size:12px; }
+main {
+  max-width:1600px; margin:auto; padding:12px;
+  display:grid; grid-template-columns:280px minmax(280px,1fr) 280px;
+  gap:10px;
+}
+.panel {
+  background:linear-gradient(150deg,#0b1929,#06101d);
+  border:1px solid var(--line); border-radius:8px;
+  padding:12px; min-width:0;
+}
+.section { border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:12px; }
+label { display:block; color:var(--muted); margin:8px 0 4px; }
+select { width:100%; }
+.row { display:flex; gap:8px; align-items:center; }
+.row > * { flex:1; min-width:0; }
+.stat { display:flex; justify-content:space-between; gap:8px; margin:5px 0; }
+.muted { color:var(--muted); }
+.gold { color:var(--gold); }
+.blue { color:#62b9ff; }
+.green { color:var(--green); }
+button.primary { background:#0869cb; border-color:#269cff; }
+button.danger { border-color:#793747; }
+.tabs { display:flex; gap:4px; margin-bottom:12px; }
+.tabs button { flex:1; padding:7px 2px; font-size:12px; }
+.tabs button.active { background:#0754a4; border-color:#3baaff; }
+#arenaWrap {
+  position:relative; overflow:hidden; border:1px solid #244865;
+  border-radius:8px; background:#101b22; min-height:390px;
+}
+#arena { display:block; width:100%; height:100%; min-height:390px; }
+.overlay {
+  position:absolute; top:10px; left:10px; right:10px;
+  display:flex; justify-content:space-between; gap:10px;
+  pointer-events:none; text-shadow:0 2px 4px #000;
+}
+.overlay div { background:#06101dc9; padding:6px 9px; border-radius:5px; }
+.bottomHud {
+  position:absolute; bottom:10px; left:10px; right:10px;
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:8px; pointer-events:none;
+}
+.orb {
+  width:75px; height:75px; border-radius:50%;
+  border:4px solid #74879b; display:flex; align-items:center;
+  justify-content:center; text-align:center; font-size:11px;
+  box-shadow:0 0 16px #000 inset; background:#761b2b;
+}
+.orb.mana { background:#123e91; }
+.skills { display:flex; gap:4px; align-self:flex-end; }
+.skill {
+  width:35px; height:38px; background:#111d30;
+  border:1px solid var(--gold); border-radius:4px;
+  display:grid; place-items:center; font-size:18px;
+}
+.meter { height:8px; background:#182b3c; border-radius:5px; overflow:hidden; }
+.meter span { display:block; height:100%; transition:width .2s; }
+.hp { background:var(--red); } .mp { background:#258bff; }
+.xp { background:#d8a84e; }
+.switchrow { display:flex; justify-content:space-between; align-items:center; margin:8px 0; }
+.switchrow input { width:18px; height:18px; accent-color:var(--blue); }
+input[type=range] { width:100%; accent-color:var(--blue); }
+.actions { display:flex; gap:8px; margin-top:12px; }
+.actions button { flex:1; }
+.log {
+  height:235px; overflow:auto; font-size:12px; color:#9fb9d4;
+  overflow-wrap:anywhere;
+}
+.log p { margin:0 0 5px; border-bottom:1px solid #11263a; padding-bottom:4px; }
+.log .loot { color:var(--gold); }
+.log .event { color:var(--green); }
+.inventory { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; }
+.item {
+  border:1px solid #35506a; border-radius:5px; padding:6px 2px;
+  text-align:center; font-size:11px; min-width:0;
+}
+.item button { border:0; padding:3px; background:transparent; }
+.rarity-common { color:#c6d2df; }
+.rarity-magic { color:#62aaff; }
+.rarity-rare { color:#f1d45c; }
+.rarity-legendary { color:#f29b50; }
+footer { max-width:1600px; margin:auto; padding:12px; }
+.help { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.help div { border:1px solid var(--line); border-radius:6px; padding:10px; }
+.small { font-size:12px; }
+@media(max-width:1050px) {
+  main { grid-template-columns:1fr 1fr; }
+  .battlePanel { grid-column:1/-1; grid-row:1; }
+  .leftPanel { grid-column:1; }
+  .rightPanel { grid-column:2; }
+}
+@media(max-width:650px) {
+  main { grid-template-columns:1fr; padding:7px; }
+  .battlePanel,.leftPanel,.rightPanel { grid-column:1; grid-row:auto; }
+  .help { grid-template-columns:1fr 1fr; }
+  #arenaWrap,#arena { min-height:360px; }
+  .log { height:180px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>⚔ 流亡黯道 1 &amp; 2 整合版</h1>
+    <div class="subtitle">AUTO FARM RPG · 自動戰鬥 · 掛機刷寶 · 角色成長</div>
+  </div>
+  <div class="row" style="flex:0 1 260px">
+    <button id="saveBtn">💾 儲存進度</button>
+    <button id="resetBtn" class="danger">重置遊戲</button>
+  </div>
+</header>
+
+<main>
+  <aside class="panel leftPanel">
+    <div class="tabs">
+      <button class="active" data-tab="character">角色</button>
+      <button data-tab="equipment">裝備</button>
+      <button data-tab="skills">技能</button>
+      <button data-tab="talents">天賦</button>
+    </div>
+    <div id="tabContent"></div>
+    <div class="section">
+      <h2>自動戰鬥設定</h2>
+      <div class="switchrow"><span>自動放置刷怪</span><input id="autoBattle" type="checkbox" checked></div>
+      <div class="switchrow"><span>自動施放技能</span><input id="autoSkill" type="checkbox" checked></div>
+      <div class="switchrow"><span>自動拾取戰利品</span><input id="autoLoot" type="checkbox" checked></div>
+      <div class="switchrow"><span>自動裝備更強物品</span><input id="autoEquip" type="checkbox" checked></div>
+      <label for="mapSelect">刷怪地圖</label>
+      <select id="mapSelect">
+        <option value="coast">T1 海灘海岸</option>
+        <option value="forest">T3 幽暗森林</option>
+        <option value="ruins">T5 遠古遺跡</option>
+        <option value="abyss">T10 深淵領域</option>
+        <option value="boss">首領競技場</option>
+      </select>
+      <label>刷怪範圍：<span id="rangeValue">80%</span></label>
+      <input id="range" type="range" min="20" max="100" value="80">
+      <label>戰鬥速度：<span id="speedValue">1.0x</span></label>
+      <input id="speed" type="range" min="1" max="5" value="1">
+      <div class="actions">
+        <button id="startBtn" class="primary">▶ 開始刷怪</button>
+        <button id="stopBtn">Ⅱ 暫停</button>
+      </div>
+    </div>
+  </aside>
+
+  <section class="battlePanel">
+    <div id="arenaWrap">
+      <canvas id="arena"></canvas>
+      <div class="overlay">
+        <div><b id="mapTitle">T1 海灘海岸</b><br>
+          <span class="small">怪物：<span id="monsterCount">0</span></span></div>
+        <div class="small" style="text-align:right">LV <span id="levelTop">1</span><br>
+          <span id="stateText" class="green">準備就緒</span></div>
+      </div>
+      <div class="bottomHud">
+        <div>
+          <div class="orb" id="hpOrb">❤️<br>100/100</div>
+          <div class="small" style="text-align:center">生命</div>
+        </div>
+        <div class="skills">
+          <div class="skill" title="火焰術">🔥</div>
+          <div class="skill" title="冰霜術">❄️</div>
+          <div class="skill" title="閃電術">⚡</div>
+          <div class="skill" title="旋風斬">🌀</div>
+        </div>
+        <div>
+          <div class="orb mana" id="mpOrb">🔷<br>50/50</div>
+          <div class="small" style="text-align:center">魔力</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:10px">
+      <div class="stat"><b>經驗值</b><span id="xpText">0 / 100</span></div>
+      <div class="meter"><span id="xpBar" class="xp" style="width:0%"></span></div>
+      <div class="row" style="margin-top:10px">
+        <div><div class="muted small">攻擊力</div><b id="attackText">12</b></div>
+        <div><div class="muted small">防禦力</div><b id="defenseText">2</b></div>
+        <div><div class="muted small">每秒擊殺</div><b id="dpsText">0</b></div>
+        <div><div class="muted small">金幣</div><b id="goldText" class="gold">0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="rightPanel">
+    <div class="panel section">
+      <div class="stat"><h2>📜 戰鬥日誌</h2><button id="clearLog" style="padding:3px 8px">清除</button></div>
+      <div id="log" class="log"></div>
+    </div>
+    <div class="panel section">
+      <h2>📊 即時統計</h2>
+      <div class="stat"><span class="muted">已擊殺怪物</span><b id="killsText">0</b></div>
+      <div class="stat"><span class="muted">獲得金幣</span><b id="goldStat">0</b></div>
+      <div class="stat"><span class="muted">獲得裝備</span><b id="lootText">0</b></div>
+      <div class="stat"><span class="muted">首領擊殺</span><b id="bossText">0</b></div>
+      <div class="stat"><span class="muted">運行時間</span><b id="timeText">00:00</b></div>
+    </div>
+    <div class="panel">
+      <h2>🎒 背包 <span class="muted small">(點擊裝備查看)</span></h2>
+      <div id="inventory" class="inventory"></div>
+      <div class="stat" style="margin-top:10px"><span>背包空間</span><b id="bagText">0 / 24</b></div>
+      <button id="sellBtn" style="width:100%;margin-top:8px">出售普通裝備</button>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <div class="panel">
+    <h2>📖 操作說明</h2>
+    <div class="help">
+      <div><b class="blue">01 選擇流派</b><p class="small muted">切換 PoE1 或 PoE2 風格，選擇職業和 Build。</p></div>
+      <div><b class="blue">02 設定刷怪</b><p class="small muted">選擇地圖、開啟自動技能及自動拾取。</p></div>
+      <div><b class="blue">03 開始戰鬥</b><p class="small muted">點擊開始，角色便會自動攻擊並取得經驗。</p></div>
+      <div><b class="blue">04 收集戰利品</b><p class="small muted">查看裝備、穿戴物品、升級並儲存進度。</p></div>
+    </div>
+    <p class="muted small">本作品為獨立製作的瀏覽器 RPG 原型，非官方遊戲或伺服器。</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+"use strict";
+
+const $ = id => document.getElementById(id);
+const maps = {
+  coast:{name:"T1 海灘海岸",power:1,xp:12,gold:8,color:"#31544b"},
+  forest:{name:"T3 幽暗森林",power:2.2,xp:26,gold:17,color:"#193f35"},
+  ruins:{name:"T5 遠古遺跡",power:4,xp:52,gold:32,color:"#4b3a32"},
+  abyss:{name:"T10 深淵領域",power:8,xp:105,gold:70,color:"#302544"},
+  boss:{name:"首領競技場",power:15,xp:500,gold:350,color:"#50282e"}
+};
+const classes = {
+  "女巫 Witch":{atk:12,def:2,hp:100,mp:50,skill:"🔥"},
+  "遊俠 Ranger":{atk:15,def:3,hp:95,mp:55,skill:"🏹"},
+  "野蠻人 Marauder":{atk:18,def:6,hp:150,mp:35,skill:"🪓"},
+  "決鬥者 Duelist":{atk:16,def:4,hp:120,mp:45,skill:"⚔️"},
+  "聖堂武僧 Templar":{atk:13,def:7,hp:140,mp:60,skill:"✨"}
+};
+const builds = {
+  "元素使 Elementalist":{atk:1.35,def:1,hp:1,mp:1.3},
+  "召喚師 Necromancer":{atk:1.1,def:1.15,hp:1.15,mp:1.2},
+  "暴擊遊俠 Deadeye":{atk:1.55,def:.85,hp:.9,mp:1},
+  "旋風戰士 Slayer":{atk:1.4,def:1.3,hp:1.2,mp:.8},
+  "聖盾守護 Guardian":{atk:1,def:1.8,hp:1.5,mp:1}
+};
+const initial = () => ({
+  version:"poe1",cls:"女巫 Witch",build:"元素使 Elementalist",
+  level:1,xp:0,gold:0,kills:0,lootCount:0,bossKills:0,
+  elapsed:0,inventory:[],equipped:null,
+  running:false,autoBattle:true,autoSkill:true,autoLoot:true,
+  autoEquip:true,range:80,speed:1,map:"coast",
+  hp:100,mp:50,lastSaved:Date.now()
+});
+let s = initial();
+let monsters=[],particles=[],drops=[],logs=[];
+let lastFrame=0,lastAttack=0,lastSkill=0,spawnClock=0;
+let startedAt=Date.now(), frameId=0;
+let tab="character";
+const canvas=$("arena"),ctx=canvas.getContext("2d");
+
+function base(){
+  return classes[s.cls] || classes["女巫 Witch"];
+}
+function build(){
+  return builds[s.build] || builds["元素使 Elementalist"];
+}
+function gearBonus(){
+  const g=s.equipped;
+  return g ? {atk:g.atk,def:g.def,hp:g.hp} : {atk:0,def:0,hp:0};
+}
+function stats(){
+  const b=base(),v=build(),g=gearBonus();
+  return {
+    atk:Math.floor((b.atk+s.level*2+g.atk)*v.atk),
+    def:Math.floor((b.def+Math.floor(s.level/2)+g.def)*v.def),
+    hp:Math.floor((b.hp+(s.level-1)*12+g.hp)*v.hp),
+    mp:Math.floor((b.mp+(s.level-1)*4)*v.mp)
+  };
+}
+function log(msg,type=""){
+  const t=new Date().toLocaleTimeString("zh-TW",{hour12:false});
+  logs.unshift({t,msg,type});
+  if(logs.length>80) logs.pop();
+  $("log").innerHTML=logs.map(x=>
+    `<p class="${x.type}">[${x.t}] ${escapeHtml(x.msg)}</p>`
+  ).join("");
+}
+function escapeHtml(x){
+  return String(x).replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function rand(a,b){return Math.random()*(b-a)+a;}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+function renderTabs(){
+  const c=$("tabContent");
+  if(tab==="character"){
+    c.innerHTML=`
+      <div class="section">
+        <h2>角色建構</h2>
+        <label>遊戲風格</label>
+        <div class="row">
+          <button id="v1" class="${s.version==="poe1"?"primary":""}">POE1 經典</button>
+          <button id="v2" class="${s.version==="poe2"?"primary":""}">POE2 新世代</button>
+        </div>
+        <label>職業</label>
+        <select id="classSelect">${Object.keys(classes).map(x=>
+          `<option ${s.cls===x?"selected":""}>${x}</option>`).join("")}</select>
+        <label>Build 流派</label>
+        <select id="buildSelect">${Object.keys(builds).map(x=>
+          `<option ${s.build===x?"selected":""}>${x}</option>`).join("")}</select>
+      </div>
+      <div class="section">
+        <h2>角色狀態</h2>
+        <div class="stat"><span>等級</span><b>LV ${s.level}</b></div>
+        <div class="stat"><span>職業</span><span>${escapeHtml(s.cls)}</span></div>
+        <div class="stat"><span>經驗值</span><span>${s.xp}/${needXP()}</span></div>
+        <div class="stat"><span>生命</span><span>${s.hp}/${stats().hp}</span></div>
+        <div class="stat"><span>魔力</span><span>${s.mp}/${stats().mp}</span></div>
+      </div>`;
+    $("v1").onclick=()=>{s.version="poe1";renderTabs();log("切換為 PoE1 經典風格","event");};
+    $("v2").onclick=()=>{s.version="poe2";renderTabs();log("切換為 PoE2 新世代風格","event");};
+    $("classSelect").onchange=e=>{
+      s.cls=e.target.value;const st=stats();s.hp=st.hp;s.mp=st.mp;
+      renderTabs();update();
+    };
+    $("buildSelect").onchange=e=>{s.build=e.target.value;renderTabs();update();};
+  } else if(tab==="equipment"){
+    const g=s.equipped;
+    c.innerHTML=`<div class="section"><h2>裝備欄位</h2>
+      <p>武器：${g?escapeHtml(g.name):"尚未裝備"}</p>
+      <p>攻擊加成：+${g?g.atk:0}</p>
+      <p>防禦加成：+${g?g.def:0}</p>
+      <p>生命加成：+${g?g.hp:0}</p>
+      <button id="unequip">卸下裝備</button></div>
+      <p class="muted small">在背包點擊裝備，即可查看及穿戴。</p>`;
+    $("unequip").onclick=()=>{
+      if(s.equipped){s.equipped=null;renderTabs();update();log("已卸下裝備");}
+    };
+  } else if(tab==="skills"){
+    c.innerHTML=`<div class="section"><h2>技能配置</h2>
+      <p>🔥 火焰術 <span class="muted">範圍傷害</span></p>
+      <p>❄️ 冰霜術 <span class="muted">穩定輸出</span></p>
+      <p>⚡ 閃電術 <span class="muted">高額爆發</span></p>
+      <p>🌀 旋風斬 <span class="muted">近戰清怪</span></p>
+      <p class="muted small">啟用自動施放後，戰鬥中會定時觸發技能。</p></div>`;
+  } else {
+    c.innerHTML=`<div class="section"><h2>天賦樹</h2>
+      <p>⚔️ 攻擊專精：每級提升基礎傷害</p>
+      <p>🛡️ 防禦專精：每兩級提升防禦</p>
+      <p>💎 魔力專精：增加技能施放能力</p>
+      <p class="muted small">角色升級會自動獲得成長加成。</p></div>`;
+  }
+}
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+  tab=b.dataset.tab;
+  document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x===b));
+  renderTabs();
+});
+function needXP(){return Math.floor(100*Math.pow(s.level,1.45));}
+
+function makeMonster(){
+  const m=maps[s.map],boss=s.map==="boss";
+  const a=rand(.18,.82),b=rand(.15,.75);
+  const range=Number(s.range)/100;
+  return {
+    x:.5+(a-.5)*range,y:.46+(b-.46)*range,
+    hp:Math.floor((boss?stats().atk*30:stats().atk*rand(1.6,3.3))*m.power),
+    maxHp:0,size:boss?26:rand(9,15),
+    name:boss?pick(["遠古守衛","深淵君王","墮落領主"]):
+      pick(["腐化獸","海岸掠奪者","荒野魔物","骷髏戰士"]),
+    boss,flash:0
+  };
+}
+function spawn(){
+  if(monsters.length<Math.floor(8*Number(s.range)/80)+3){
+    const m=makeMonster();m.maxHp=m.hp;monsters.push(m);
+  }
+}
+function attack(){
+  if(!monsters.length) return;
+  const target=pick(monsters);
+  const damage=Math.floor(stats().atk*rand(.75,1.45));
+  target.hp-=damage;target.flash=.15;
+  particles.push({x:target.x,y:target.y-0.025,text:String(damage),
+    life:.7,color:"#ffd28b"});
+  if(target.hp<=0) kill(target);
+}
+function castSkill(){
+  if(s.mp<5)return;
+  s.mp-=5;
+  const damage=Math.floor(stats().atk*rand(2,3.4));
+  const n=Math.min(monsters.length,3);
+  for(let i=0;i<n;i++){
+    const target=monsters[i];
+    target.hp-=damage;target.flash=.2;
+    particles.push({x:target.x,y:target.y-.04,text:String(damage),
+      life:.9,color:"#76caff"});
+  }
+  for(const m of [...monsters])if(m.hp<=0)kill(m);
+  particles.push({x:.5,y:.47,text:base().skill,life:.6,color:"#6ecaff"});
+  log("施放技能，造成範圍傷害");
+}
+function kill(m){
+  const idx=monsters.indexOf(m);if(idx<0)return;
+  monsters.splice(idx,1);s.kills++;
+  if(m.boss)s.bossKills++;
+  const map=maps[s.map];
+  const reward=Math.floor(map.gold*rand(.6,1.5));
+  const exp=Math.floor(map.xp*rand(.7,1.4));
+  s.gold+=reward;s.xp+=exp;
+  particles.push({x:m.x,y:m.y,text:"+"+reward+" 金幣",life:1.3,color:"#ffdf82"});
+  log(`擊殺 ${m.name}，獲得 ${reward} 金幣、${exp} 經驗`);
+  if(s.autoLoot && Math.random()< (m.boss?.95:.20)){
+    const item=makeItem();
+    if(s.inventory.length<24){
+      s.inventory.push(item);s.lootCount++;
+      log("掉落："+item.name,"loot");
+      if(s.autoEquip && (!s.equipped || score(item)>score(s.equipped))){
+        s.equipped=item;log("自動裝備："+item.name,"event");
+      }
+    } else log("背包已滿，無法拾取裝備");
+  }
+  while(s.xp>=needXP()){
+    s.xp-=needXP();s.level++;
+    const st=stats();s.hp=st.hp;s.mp=st.mp;
+    log("角色升級！目前等級 LV "+s.level,"event");
+  }
+}
+function makeItem(){
+  const r=Math.random();
+  const rarity=r<.56?"普通":r<.83?"魔法":r<.97?"稀有":"傳奇";
+  const mult={普通:1,魔法:1.7,稀有:2.8,傳奇:5}[rarity];
+  const names=["古老長劍","秘術法杖","暗影護甲","深淵戒指","獵魔弓","守護盾牌"];
+  return {
+    id:Date.now()+Math.random(),
+    name:pick(names),rarity,
+    atk:Math.floor(rand(1,5)*mult),
+    def:Math.floor(rand(0,3)*mult),
+    hp:Math.floor(rand(0,8)*mult),
+    price:Math.floor(mult*rand(8,35))
+  };
+}
+function score(g){return g.atk*2+g.def+g.hp*.3;}
+function equipItem(i){
+  const item=s.inventory[i];if(!item)return;
+  s.equipped=item;
+  log("已裝備 "+item.name,"event");
+  renderTabs();update();
+}
+function renderInventory(){
+  $("inventory").innerHTML=s.inventory.map((it,i)=>`
+    <div class="item">
+      <div class="rarity-${({
+        普通:"common",魔法:"magic",稀有:"rare",傳奇:"legendary"
+      })[it.rarity]}">${({普通:"⚔",魔法:"✦",稀有:"◆",傳奇:"★"})[it.rarity]}</div>
+      <button title="${escapeHtml(it.name)}" data-item="${i}">${escapeHtml(it.name)}</button>
+      <div class="muted">攻 +${it.atk}</div>
+      <div class="muted">防 +${it.def}</div>
+    </div>`).join("") || '<p class="muted small">尚無裝備</p>';
+  $("inventory").querySelectorAll("[data-item]").forEach(b=>b.onclick=()=>{
+    const i=Number(b.dataset.item),it=s.inventory[i];
+    if(confirm(`${it.name}（${it.rarity}）\n攻擊 +${it.atk}\n防禦 +${it.def}\n生命 +${it.hp}\n\n要裝備這件物品嗎？`))equipItem(i);
+  });
+  $("bagText").textContent=s.inventory.length+" / 24";
+}
+function update(){
+  const st=stats();
+  $("mapTitle").textContent=maps[s.map].name;
+  $("monsterCount").textContent=monsters.length;
+  $("levelTop").textContent=s.level;
+  $("xpText").textContent=s.xp+" / "+needXP();
+  $("xpBar").style.width=(100*s.xp/needXP())+"%";
+  $("attackText").textContent=st.atk;
+  $("defenseText").textContent=st.def;
+  $("goldText").textContent=s.gold.toLocaleString();
+  $("goldStat").textContent=s.gold.toLocaleString();
+  $("killsText").textContent=s.kills;
+  $("lootText").textContent=s.lootCount;
+  $("bossText").textContent=s.bossKills;
+  $("hpOrb").innerHTML="❤️<br>"+s.hp+"/"+st.hp;
+  $("mpOrb").innerHTML="🔷<br>"+s.mp+"/"+st.mp;
+  $("stateText").textContent=s.running?"自動戰鬥中":"已暫停";
+  $("stateText").className=s.running?"green":"muted";
+  $("startBtn").disabled=s.running;
+  $("stopBtn").disabled=!s.running;
+  $("timeText").textContent=new Date(s.elapsed*1000).toISOString().slice(11,19);
+  renderInventory();
+}
+function resizeCanvas(){
+  const r=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function draw(){
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  ctx.clearRect(0,0,w,h);
+  const map=maps[s.map];
+  ctx.fillStyle=map.color;ctx.fillRect(0,0,w,h);
+  // 暗色地面、石塊與道路
+  for(let i=0;i<220;i++){
+    const x=(i*173.3%w),y=(i*91.7%h);
+    ctx.fillStyle=i%3===0?"#ffffff0b":"#00000016";
+    ctx.beginPath();ctx.ellipse(x,y,rand(2,9),rand(2,5),0,0,Math.PI*2);ctx.fill();
+  }
+  ctx.strokeStyle="#b9b8a012";ctx.lineWidth=1;
+  for(let i=0;i<7;i++){
+    ctx.beginPath();ctx.moveTo(0,h*i/7);ctx.lineTo(w,h*i/7);ctx.stroke();
+  }
+  // 戰場裝飾
+  for(let i=0;i<18;i++){
+    const x=(i*137+40)%w,y=(i*89+65)%h;
+    ctx.fillStyle="#11130f";ctx.beginPath();
+    ctx.arc(x,y,8+(i%4)*2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#516047";ctx.beginPath();
+    ctx.ellipse(x-5,y-5,7,3,-.7,0,Math.PI*2);ctx.fill();
+  }
+  // 玩家魔法光環
+  const px=w*.5,py=h*.53;
+  const pulse=4+Math.sin(Date.now()/180)*3;
+  ctx.strokeStyle="#4e9fff9c";ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(px,py,35+pulse,14+pulse/2,0,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle="#3a8de7";ctx.beginPath();ctx.arc(px,py-10,9,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#b9dcff";ctx.beginPath();ctx.arc(px,py-21,5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle="#91caff";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(px-5,py-4);ctx.lineTo(px-9,py+12);ctx.lineTo(px+8,py+12);ctx.stroke();
+  // 怪物
+  for(const m of monsters){
+    const x=m.x*w,y=m.y*h,r=m.size;
+    ctx.fillStyle=m.boss?"#6e242d":"#281c19";
+    ctx.beginPath();ctx.ellipse(x,y,r*1.2,r*.8,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=m.flash>0?"#ffce83":m.boss?"#e95b5b":"#a54e37";
+    ctx.beginPath();ctx.arc(x,y-r*.45,r*.65,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#e8d2b3";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x-r*.4,y-r*.65);ctx.lineTo(x-r*.8,y-r*1.1);
+    ctx.moveTo(x+r*.4,y-r*.65);ctx.lineTo(x+r*.8,y-r*1.1);ctx.stroke();
+    ctx.fillStyle="#151015";ctx.fillRect(x-r,y-r*1.7,r*2,4);
+    ctx.fillStyle="#ef4048";ctx.fillRect(x-r,y-r*1.7,r*2*Math.max(0,m.hp/m.maxHp),4);
+    if(m.boss){ctx.fillStyle="#ffe1b1";ctx.font="12px sans-serif";ctx.textAlign="center";ctx.fillText("首領",x,y-r*2);}
+    m.flash=Math.max(0,m.flash-.016);
+  }
+  // 傷害文字與技能效果
+  for(const p of particles){
+    p.life-=.016;p.y-=.0006;
+    ctx.globalAlpha=Math.min(1,p.life*2);
+    ctx.fillStyle=p.color;ctx.font="bold 14px sans-serif";
+    ctx.textAlign="center";ctx.fillText(p.text,p.x*w,p.y*h);
+    ctx.globalAlpha=1;
+  }
+  particles=particles.filter(p=>p.life>0);
+  // 簡易小地圖
+  const mw=Math.min(105,w*.22),mh=mw*.7,mx=w-mw-12,my=48;
+  ctx.fillStyle="#06101ddc";ctx.fillRect(mx,my,mw,mh);
+  ctx.strokeStyle="#4d9fe7";ctx.strokeRect(mx,my,mw,mh);
+  monsters.forEach(m=>{
+    ctx.fillStyle=m.boss?"#ffb14b":"#ff3d50";
+    ctx.beginPath();ctx.arc(mx+m.x*mw,my+m.y*mh,2,0,Math.PI*2);ctx.fill();
+  });
+  ctx.fillStyle="#68c2ff";ctx.beginPath();ctx.arc(mx+mw*.5,my+mh*.53,3,0,Math.PI*2);ctx.fill();
+}
+function loop(ts){
+  if(!lastFrame)lastFrame=ts;
+  const dt=Math.min((ts-lastFrame)/1000,.1);lastFrame=ts;
+  if(s.running){
+    const scaled=dt*Number(s.speed);
+    s.elapsed+=scaled;
+    spawnClock+=scaled;
+    if(spawnClock>.8){spawn();spawnClock=0;}
+    if(ts-lastAttack>1000/Number(s.speed)){
+      attack();lastAttack=ts;
+    }
+    if(s.autoSkill && ts-lastSkill>3000/Number(s.speed)){
+      castSkill();lastSkill=ts;
+    }
+    const st=stats();
+    s.hp=Math.min(st.hp,s.hp+scaled*.6);
+    s.mp=Math.min(st.mp,s.mp+scaled*2);
+    // 怪物對玩家造成少量反擊
+    if(monsters.length && Math.random()<scaled*.45){
+      s.hp=Math.max(0,s.hp-Math.max(1,Math.floor(maps[s.map].power-st.def*.15)));
+      if(s.hp<=0){
+        s.hp=Math.max(1,Math.floor(st.hp*.5));
+        log("角色倒下後重新站起，生命恢復一半","event");
+      }
+    }
+    if(Math.floor(s.elapsed)%2===0 && Math.random()<.02)update();
+  }
+  draw();
+  frameId=requestAnimationFrame(loop);
+}
+function setRunning(v){
+  s.running=v;s.autoBattle=v;
+  $("autoBattle").checked=v;
+  update();
+  log(v?"開始自動刷怪":"已暫停自動刷怪","event");
+}
+$("startBtn").onclick=()=>setRunning(true);
+$("stopBtn").onclick=()=>setRunning(false);
+$("autoBattle").onchange=e=>setRunning(e.target.checked);
+$("autoSkill").onchange=e=>s.autoSkill=e.target.checked;
+$("autoLoot").onchange=e=>s.autoLoot=e.target.checked;
+$("autoEquip").onchange=e=>s.autoEquip=e.target.checked;
+$("range").oninput=e=>{
+  s.range=Number(e.target.value);$("rangeValue").textContent=s.range+"%";
+};
+$("speed").oninput=e=>{
+  s.speed=Number(e.target.value);$("speedValue").textContent=s.speed.toFixed(1)+"x";
+};
+$("mapSelect").onchange=e=>{
+  s.map=e.target.value;monsters=[];spawnClock=0;
+  log("進入地圖："+maps[s.map].name,"event");update();
+};
+$("clearLog").onclick=()=>{logs=[];$("log").innerHTML="";};
+$("sellBtn").onclick=()=>{
+  const before=s.inventory.length;
+  const keep=s.inventory.filter(it=>it.rarity!=="普通" || it===s.equipped);
+  const sold=s.inventory.filter(it=>it.rarity==="普通" && it!==s.equipped);
+  if(!sold.length){log("沒有可出售的普通裝備");return;}
+  s.gold+=sold.reduce((a,it)=>a+it.price,0);
+  s.inventory=keep;
+  log(`出售 ${before-keep.length} 件普通裝備`,"loot");
+  update();
+};
+function save(){
+  s.lastSaved=Date.now();
+  const data={...s,running:false};
+  localStorage.setItem("autoLootRPGSave",JSON.stringify(data));
+  setRunning(false);
+  log("遊戲進度已儲存到本機","event");
+}
+$("saveBtn").onclick=save;
+$("resetBtn").onclick=()=>{
+  if(!confirm("確定重置所有角色、裝備與進度？此操作無法復原。"))return;
+  localStorage.removeItem("autoLootRPGSave");
+  s=initial();monsters=[];particles=[];logs=[];
+  $("log").innerHTML="";
+  $("mapSelect").value=s.map;
+  $("range").value=s.range;$("speed").value=s.speed;
+  $("autoSkill").checked=s.autoSkill;$("autoLoot").checked=s.autoLoot;
+  $("autoEquip").checked=s.autoEquip;
+  $("rangeValue").textContent=s.range+"%";
+  $("speedValue").textContent=s.speed.toFixed(1)+"x";
+  renderTabs();update();log("新角色已建立","event");
+};
+function load(){
+  try{
+    const raw=localStorage.getItem("autoLootRPGSave");
+    if(raw){
+      const data=JSON.parse(raw);
+      s={...initial(),...data,running:false};
+      // 防止損壞的存檔資料造成錯誤
+      if(!classes[s.cls])s.cls="女巫 Witch";
+      if(!builds[s.build])s.build="元素使 Elementalist";
+      if(!maps[s.map])s.map="coast";
+      s.inventory=Array.isArray(s.inventory)?s.inventory.slice(0,24):[];
+      log("已讀取本機存檔","event");
+    }
+  }catch(e){console.warn("讀取存檔失敗",e);}
+  $("mapSelect").value=s.map;
+  $("range").value=s.range;$("speed").value=s.speed;
+  $("rangeValue").textContent=s.range+"%";
+  $("speedValue").textContent=s.speed.toFixed(1)+"x";
+  $("autoSkill").checked=s.autoSkill;
+  $("autoLoot").checked=s.autoLoot;
+  $("autoEquip").checked=s.autoEquip;
+  $("autoBattle").checked=false;
+}
+window.addEventListener("resize",resizeCanvas);
+window.addEventListener("beforeunload",()=>{
+  try{
+    localStorage.setItem("autoLootRPGSave",JSON.stringify({...s,running:false}));
+  }catch(e){}
+});
+load();renderTabs();resizeCanvas();update();
+log("歡迎來到流亡世界！選擇地圖後開始刷怪。","event");
+frameId=requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
